@@ -1,6 +1,6 @@
 {
   "name": "pi-powerlevel10k",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Powerlevel10k-style prompt for pi — reuses your ~/.p10k.zsh colors, icons, and git formatting",
   "keywords": [
     "pi-package",
