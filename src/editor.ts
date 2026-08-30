@@ -88,6 +88,16 @@ export class P10kEditor extends CustomEditor {
 		const autocompleteLines = bottomIdx >= 0 ? lines.slice(bottomIdx + 1) : [];
 		const body = bottomIdx >= 0 ? lines.slice(0, bottomIdx + 1) : [...lines];
 
+		// Reserve a FIXED-height block for the autocomplete menu so the layout
+		// only shifts when the menu opens/closes — not on every keystroke that
+		// filters the list (menu height varies from 1 line to maxVisible+1 as
+		// items are filtered, incl. the scroll-info / "no match" line). Short
+		// lists are padded with blank rows up to the max possible height.
+		if (autocompleteLines.length > 0) {
+			const reserve = Math.max(1, this.getAutocompleteMaxVisible() + 1);
+			while (autocompleteLines.length < reserve) autocompleteLines.push("");
+		}
+
 		// Drop the plain top/bottom frame lines (keep ↑/↓ scroll indicators).
 		if (body.length > 0 && isPlainBorder(body[0])) body.shift();
 		if (body.length > 0 && isPlainBorder(body[body.length - 1])) body.pop();
