@@ -70,25 +70,48 @@ export class P10kEditor extends CustomEditor {
 			lines[idx] = fg(this.getPromptColor(), this.promptChar) + line.slice(1);
 		}
 
-		// Drop the plain horizontal frame lines (top/bottom borders). Border
-		// lines start at column 0 and strip to all "─"; content lines always
+		// Border handling. Border lines start at column 0 with "─" (plain all-dash
+		// frame lines, or scroll indicators with ↑/↓ embedded); content lines always
 		// begin with the padding columns, so typed dashes are never matched.
-		// Scroll-indicator borders (↑/↓ embedded) are kept for overflow feedback.
+		const isBorderStart = (l: string) => stripAnsi(l).startsWith("─");
 		const isPlainBorder = (l: string) => /^[─]+$/.test(stripAnsi(l));
-		const out = [...lines];
-		if (out.length > 0 && isPlainBorder(out[0])) out.shift();
-		// Bottom border: the last all-dash line (autocomplete lines may follow it).
-		for (let i = out.length - 1; i >= 0; i--) {
-			if (isPlainBorder(out[i])) {
-				out.splice(i, 1);
+
+		// The bottom border is the LAST border-start line; anything after it is the
+		// autocomplete menu. Split so menu open/close is detectable.
+		let bottomIdx = -1;
+		for (let i = lines.length - 1; i >= 0; i--) {
+			if (isBorderStart(lines[i])) {
+				bottomIdx = i;
 				break;
 			}
 		}
-		// Breathing room at the bottom of the window (PROMPT_ADD_NEWLINE).
-		// The footer dock reserves one row below the editor (minSize: 1), which
-		// is blank with our minimal footer — so one row here yields ~2 visible
+		const autocompleteLines = bottomIdx >= 0 ? lines.slice(bottomIdx + 1) : [];
+		const body = bottomIdx >= 0 ? lines.slice(0, bottomIdx + 1) : [...lines];
+
+		// Reserve a FIXED-height block for the autocomplete menu so the layout
+		// only shifts when the menu opens/closes — not on every keystroke that
+		// filters the list (menu height varies from 1 line to maxVisible+1 as
+		// items are filtered, incl. the scroll-info / "no match" line). Short
+		// lists are padded with blank rows up to the max possible height.
+		if (autocompleteLines.length > 0) {
+			const reserve = Math.max(1, this.getAutocompleteMaxVisible() + 1);
+			while (autocompleteLines.length < reserve) autocompleteLines.push("");
+		}
+
+		// Drop the plain top/bottom frame lines (keep ↑/↓ scroll indicators).
+		if (body.length > 0 && isPlainBorder(body[0])) body.shift();
+		if (body.length > 0 && isPlainBorder(body[body.length - 1])) body.pop();
+
+		// Breathing room at the bottom of the window (PROMPT_ADD_NEWLINE). The
+		// footer dock reserves one row below the editor (minSize: 1), which is
+		// blank with our minimal footer — so one row here yields ~2 visible
 		// blank rows total.
-		if (this.style.promptAddNewline) out.push("");
-		return out;
+		//
+		// Skipped while the autocomplete menu is open: the menu already adds its
+		// own rows below the input, and keeping the padding out makes open/close
+		// shift the layout by exactly the menu height instead of menu + padding
+		// (prevents the wonky snap-back when the menu closes).
+		if (this.style.promptAddNewline && autocompleteLines.length === 0) body.push("");
+		return [...body, ...autocompleteLines];
 	}
 }
