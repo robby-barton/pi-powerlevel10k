@@ -10,7 +10,6 @@
 		"forceConsistentCasingInFileNames": true,
 		"noFallthroughCasesInSwitch": true,
 		"types": ["node"],
-		"baseUrl": ".",
 		"paths": {
 			"@earendil-works/pi-coding-agent": [
 				"/home/robby/.nvm/versions/node/v24.14.0/lib/node_modules/@earendil-works/pi-coding-agent/dist/index.d.ts"
