@@ -1,0 +1,4 @@
+node_modules/
+.typecheck/node_modules/
+.legacy-backup/
+*.log
